@@ -54,6 +54,40 @@
             font-size: 0.9em;
         }
 
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            justify-content: center;
+        }
+
+        .mode-btn {
+            padding: 10px 25px;
+            font-size: 0.95em;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 2px solid transparent;
+            backdrop-filter: blur(10px);
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 242, 255, 0.4);
+        }
+
+        .mode-btn.active {
+            border-color: #00ff88;
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.6);
+        }
+
+        .mode-btn.or-mode { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .mode-btn.threebet-mode { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+
         .controls {
             display: flex;
             gap: 10px;
@@ -89,6 +123,7 @@
         .position-btn.mp { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
         .position-btn.co { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
         .position-btn.bu { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .position-btn.bb { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
 
         .main-content {
             display: flex;
@@ -204,6 +239,16 @@
             background: rgba(255, 50, 50, 0.9); 
             color: #fff;
             border-color: rgba(255, 50, 50, 1);
+        }
+        .cell.threebet { 
+            background: rgba(255, 50, 50, 0.9); 
+            color: #fff;
+            border-color: rgba(255, 50, 50, 1);
+        }
+        .cell.coldcall { 
+            background: rgba(0, 120, 220, 0.9); 
+            color: #fff;
+            border-color: rgba(0, 120, 220, 1);
         }
 
         .side-panel {
@@ -462,10 +507,15 @@
     <div class="container">
         <header>
             <h1>🂡 Poker Range Visualizer</h1>
-            <p class="subtitle">NL2 - OR, Call vs 3Bet y 4Bet</p>
+            <p class="subtitle">NL2 - Rangos Completos</p>
         </header>
 
-        <div class="controls">
+        <div class="mode-selector">
+            <button class="mode-btn or-mode active" onclick="changeMode('or')">📊 OR + Call vs 3Bet</button>
+            <button class="mode-btn threebet-mode" onclick="changeMode('threebet')">🔴 3Bet + Cold Call</button>
+        </div>
+
+        <div class="controls" id="positionControls">
             <button class="position-btn utg active" onclick="changePosition('UTG')">UTG</button>
             <button class="position-btn mp" onclick="changePosition('MP')">MP</button>
             <button class="position-btn co" onclick="changePosition('CO')">CO</button>
@@ -484,46 +534,9 @@
             <div class="side-panel">
                 <div class="filters">
                     <h3>🎛️ Filtros</h3>
-                    <label class="filter-item">
-                        <input type="checkbox" checked data-filter="or">
-                        <span class="filter-label">
-                            <span class="filter-color" style="background: rgba(0, 150, 255, 0.7);"></span>
-                            Open Raise
-                        </span>
-                        <span class="filter-count" id="count-or">0</span>
-                    </label>
-                    <label class="filter-item">
-                        <input type="checkbox" checked data-filter="call3bet">
-                        <span class="filter-label">
-                            <span class="filter-color" style="background: rgba(0, 80, 180, 0.9);"></span>
-                            Call 3Bet
-                        </span>
-                        <span class="filter-count" id="count-call3bet">0</span>
-                    </label>
-                    <label class="filter-item">
-                        <input type="checkbox" checked data-filter="bet4">
-                        <span class="filter-label">
-                            <span class="filter-color" style="background: rgba(255, 180, 0, 0.9);"></span>
-                            4Bet Value
-                        </span>
-                        <span class="filter-count" id="count-bet4">0</span>
-                    </label>
-                    <label class="filter-item">
-                        <input type="checkbox" checked data-filter="bet4bluff">
-                        <span class="filter-label">
-                            <span class="filter-color" style="background: rgba(255, 50, 50, 0.9);"></span>
-                            4Bet Bluff
-                        </span>
-                        <span class="filter-count" id="count-bet4bluff">0</span>
-                    </label>
-                    <label class="filter-item">
-                        <input type="checkbox" checked data-filter="fold">
-                        <span class="filter-label">
-                            <span class="filter-color" style="background: rgba(240, 230, 200, 0.3);"></span>
-                            Fold
-                        </span>
-                        <span class="filter-count" id="count-fold">0</span>
-                    </label>
+                    <div id="filterContainer">
+                        <!-- Filters will be dynamically generated -->
+                    </div>
                 </div>
 
                 <div class="stats">
@@ -536,11 +549,11 @@
                         <div class="stat-fill" id="bar-playable" style="width: 0%"></div>
                     </div>
                     <div class="stat-row" style="margin-top: 10px;">
-                        <span class="stat-label">4Bet (Value + Bluff)</span>
-                        <span class="stat-value" id="stat-4bet">0%</span>
+                        <span class="stat-label">Agresivas</span>
+                        <span class="stat-value" id="stat-aggressive">0%</span>
                     </div>
                     <div class="stat-bar">
-                        <div class="stat-fill" id="bar-4bet" style="width: 0%; background: linear-gradient(90deg, #ffb400, #ff3232);"></div>
+                        <div class="stat-fill" id="bar-aggressive" style="width: 0%; background: linear-gradient(90deg, #ff3232, #ffb400);"></div>
                     </div>
                     <div class="stat-row" style="margin-top: 10px;">
                         <span class="stat-label">Total manos</span>
@@ -550,25 +563,8 @@
 
                 <div class="legend">
                     <h3>📖 Leyenda</h3>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: rgba(0, 150, 255, 0.7);"></div>
-                        <div class="legend-text"><strong>OR</strong><br>Open Raise</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: rgba(0, 80, 180, 0.9);"></div>
-                        <div class="legend-text"><strong>Call 3Bet</strong><br>Continuar vs 3-bet</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: rgba(255, 180, 0, 0.9);"></div>
-                        <div class="legend-text"><strong>4Bet</strong><br>Resubir (value)</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: rgba(255, 50, 50, 0.9);"></div>
-                        <div class="legend-text"><strong>4Bet Bluff</strong><br>Resubir (bluff)</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: rgba(240, 230, 200, 0.3);"></div>
-                        <div class="legend-text"><strong>Fold</strong><br>No jugar</div>
+                    <div id="legendContainer">
+                        <!-- Legend will be dynamically generated -->
                     </div>
                 </div>
 
@@ -581,7 +577,8 @@
     </div>
 
     <script>
-        const ranges = {
+        // OR + Call vs 3Bet ranges (existing)
+        const orRanges = {
             UTG: {
                 or: ['AA', 'AKs', 'AQs', 'AJs', 'ATs', 'A9s', 'A8s', 'A7s', 'A6s', 'A5s', 'A4s', 'A3s', 'A2s',
                      'KK', 'KQs', 'KJs', 'KTs', 'K9s', 'K8s', 'K7s', 'K6s', 'K5s', 'K4s', 'K3s', 'K2s',
@@ -708,28 +705,261 @@
             }
         };
 
-        const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
-        let currentPosition = 'UTG';
-        let activeFilters = {
-            or: true,
-            call3bet: true,
-            bet4: true,
-            bet4bluff: true,
-            fold: true
+        // 3Bet + Cold Call ranges (new)
+        const threeBetRanges = {
+            vsUTGMP: {
+                threebet: ['AA', 'AKs', 'AQs', 'AJs', 'ATs', 'AKo', 'KK', 'KQs', 'KJs', 'KTs', 'AQo', 'KQo', 'QQ', 'QJs', 'QTs', 'AJo', 'KJo', 'QJo', 'JJ', 'JTs', 'ATo', 'KTo', 'QTo', 'JTo', 'TT'],
+                coldcall: ['A9s', 'A8s', 'A7s', 'A6s', 'A5s', 'A4s', 'A3s', 'A2s', 'K9s', 'K8s', 'K7s', 'K6s', 'K5s', 'K4s', 'K3s', 'K2s', 'Q9s', 'Q8s', 'Q7s', 'Q6s', 'Q5s', 'Q4s', 'Q3s', 'Q2s', 'J9s', 'J8s', 'J7s', 'J6s', 'J5s', 'J4s', 'J3s', 'J2s', 'T9s', 'T8s', 'T7s', 'T6s', 'T5s', 'T4s', 'T3s', 'T2s', '99', '98s', '97s', '96s', '95s', '94s', '93s', '92s', '88', '87s', '86s', '85s', '84s', '83s', '82s', '77', '76s', '75s', '74s', '73s', '72s', '66', '65s', '64s', '63s', '62s', '55', '54s', '53s', '52s', '44', '43s', '42s', '33', '32s', '22', 'A9o', 'A8o', 'A7o', 'A6o', 'A5o', 'A4o', 'A3o', 'A2o', 'K9o', 'K8o', 'K7o', 'K6o', 'K5o', 'K4o', 'K3o', 'K2o', 'Q9o', 'Q8o', 'Q7o', 'Q6o', 'Q5o', 'Q4o', 'Q3o', 'Q2o', 'J9o', 'J8o', 'J7o', 'J6o', 'J5o', 'J4o', 'J3o', 'J2o', 'T9o', 'T8o', 'T7o', 'T6o', 'T5o', 'T4o', 'T3o', 'T2o', '98o', '97o', '96o', '95o', '94o', '93o', '92o', '87o', '86o', '85o', '84o', '83o', '82o', '76o', '75o', '74o', '73o', '72o', '65o', '64o', '63o', '62o', '54o', '53o', '52o', '43o', '42o', '32o']
+            },
+            vsCOBU: {
+                threebet: ['AA', 'AKs', 'AQs', 'AJs', 'ATs', 'A9s', 'AKo', 'KK', 'KQs', 'KJs', 'KTs', 'K9s', 'AQo', 'KQo', 'QQ', 'QJs', 'QTs', 'Q9s', 'AJo', 'KJo', 'QJo', 'JJ', 'JTs', 'J9s', 'ATo', 'KTo', 'QTo', 'JTo', 'TT', 'T9s'],
+                coldcall: ['A8s', 'A7s', 'A6s', 'A5s', 'A4s', 'A3s', 'A2s', 'K8s', 'K7s', 'K6s', 'K5s', 'K4s', 'K3s', 'K2s', 'Q8s', 'Q7s', 'Q6s', 'Q5s', 'Q4s', 'Q3s', 'Q2s', 'J8s', 'J7s', 'J6s', 'J5s', 'J4s', 'J3s', 'J2s', 'T8s', 'T7s', 'T6s', 'T5s', 'T4s', 'T3s', 'T2s', '98s', '97s', '96s', '95s', '94s', '93s', '92s', '88', '87s', '86s', '85s', '84s', '83s', '82s', '77', '76s', '75s', '74s', '73s', '72s', '66', '65s', '64s', '63s', '62s', '55', '54s', '53s', '52s', '44', '43s', '42s', '33', '32s', '22', 'A8o', 'A7o', 'A6o', 'A5o', 'A4o', 'A3o', 'A2o', 'K8o', 'K7o', 'K6o', 'K5o', 'K4o', 'K3o', 'K2o', 'Q8o', 'Q7o', 'Q6o', 'Q5o', 'Q4o', 'Q3o', 'Q2o', 'J8o', 'J7o', 'J6o', 'J5o', 'J4o', 'J3o', 'J2o', 'T8o', 'T7o', 'T6o', 'T5o', 'T4o', 'T3o', 'T2o', '98o', '97o', '96o', '95o', '94o', '93o', '92o', '87o', '86o', '85o', '84o', '83o', '82o', '76o', '75o', '74o', '73o', '72o', '65o', '64o', '63o', '62o', '54o', '53o', '52o', '43o', '42o', '32o']
+            },
+            BBvsUTGMP: {
+                threebet: ['AA', 'AKs', 'AQs', 'AJs', 'ATs', 'AKo', 'KK', 'KQs', 'KJs', 'KTs', 'AQo', 'KQo', 'QQ', 'QJs', 'QTs', 'AJo', 'KJo', 'QJo', 'JJ', 'JTs', 'ATo', 'KTo', 'QTo', 'JTo', 'TT'],
+                coldcall: ['A9s', 'A8s', 'A7s', 'A6s', 'A5s', 'A4s', 'A3s', 'A2s', 'K9s', 'K8s', 'K7s', 'K6s', 'K5s', 'K4s', 'K3s', 'K2s', 'Q9s', 'Q8s', 'Q7s', 'Q6s', 'Q5s', 'Q4s', 'Q3s', 'Q2s', 'J9s', 'J8s', 'J7s', 'J6s', 'J5s', 'J4s', 'J3s', 'J2s', 'T9s', 'T8s', 'T7s', 'T6s', 'T5s', 'T4s', 'T3s', 'T2s', '99', '98s', '97s', '96s', '95s', '94s', '93s', '92s', '88', '87s', '86s', '85s', '84s', '83s', '82s', '77', '76s', '75s', '74s', '73s', '72s', '66', '65s', '64s', '63s', '62s', '55', '54s', '53s', '52s', '44', '43s', '42s', '33', '32s', '22']
+            },
+            BBvsCOBUS: {
+                threebet: ['AA', 'AKs', 'AQs', 'AJs', 'ATs', 'A9s', 'A8s', 'AKo', 'KK', 'KQs', 'KJs', 'KTs', 'K9s', 'K8s', 'AQo', 'KQo', 'QQ', 'QJs', 'QTs', 'Q9s', 'Q8s', 'AJo', 'KJo', 'QJo', 'JJ', 'JTs', 'J9s', 'J8s', 'ATo', 'KTo', 'QTo', 'JTo', 'TT', 'T9s', 'T8s'],
+                coldcall: ['A7s', 'A6s', 'A5s', 'A4s', 'A3s', 'A2s', 'K7s', 'K6s', 'K5s', 'K4s', 'K3s', 'K2s', 'Q7s', 'Q6s', 'Q5s', 'Q4s', 'Q3s', 'Q2s', 'J7s', 'J6s', 'J5s', 'J4s', 'J3s', 'J2s', 'T7s', 'T6s', 'T5s', 'T4s', 'T3s', 'T2s', '98s', '97s', '96s', '95s', '94s', '93s', '92s', '88', '87s', '86s', '85s', '84s', '83s', '82s', '77', '76s', '75s', '74s', '73s', '72s', '66', '65s', '64s', '63s', '62s', '55', '54s', '53s', '52s', '44', '43s', '42s', '33', '32s', '22']
+            }
         };
+
+        const ranks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+        let currentMode = 'or'; // 'or' or 'threebet'
+        let currentPosition = 'UTG';
+        let currentThreeBetScenario = 'vsUTGMP';
+        let activeFilters = {};
+
+        function changeMode(mode) {
+            currentMode = mode;
+            
+            // Update mode buttons
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.mode-btn.${mode}-mode`).classList.add('active');
+            
+            // Update position controls based on mode
+            const positionControls = document.getElementById('positionControls');
+            
+            if (mode === 'or') {
+                positionControls.innerHTML = `
+                    <button class="position-btn utg active" onclick="changePosition('UTG')">UTG</button>
+                    <button class="position-btn mp" onclick="changePosition('MP')">MP</button>
+                    <button class="position-btn co" onclick="changePosition('CO')">CO</button>
+                    <button class="position-btn bu" onclick="changePosition('BU')">BU</button>
+                `;
+                currentPosition = 'UTG';
+            } else {
+                positionControls.innerHTML = `
+                    <button class="position-btn bb active" onclick="changeThreeBetScenario('vsUTGMP')">vs UTG-MP</button>
+                    <button class="position-btn bb" onclick="changeThreeBetScenario('vsCOBU')">vs CO-BU</button>
+                    <button class="position-btn bb" onclick="changeThreeBetScenario('BBvsUTGMP')">BB vs UTG-MP</button>
+                    <button class="position-btn bb" onclick="changeThreeBetScenario('BBvsCOBUS')">BB vs CO-BU-SB</button>
+                `;
+                currentThreeBetScenario = 'vsUTGMP';
+            }
+            
+            updateFiltersAndLegend();
+            generateMatrix();
+        }
+
+        function changePosition(position) {
+            currentPosition = position;
+            document.getElementById('positionTitle').textContent = position;
+            
+            document.querySelectorAll('.position-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.position-btn.${position.toLowerCase()}`).classList.add('active');
+            
+            updateFiltersAndLegend();
+            generateMatrix();
+        }
+
+        function changeThreeBetScenario(scenario) {
+            currentThreeBetScenario = scenario;
+            
+            const titles = {
+                'vsUTGMP': 'vs UTG-MP',
+                'vsCOBU': 'vs CO-BU',
+                'BBvsUTGMP': 'BB vs UTG-MP',
+                'BBvsCOBUS': 'BB vs CO-BU-SB'
+            };
+            
+            document.getElementById('positionTitle').textContent = titles[scenario];
+            
+            document.querySelectorAll('.position-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            updateFiltersAndLegend();
+            generateMatrix();
+        }
+
+        function updateFiltersAndLegend() {
+            const filterContainer = document.getElementById('filterContainer');
+            const legendContainer = document.getElementById('legendContainer');
+            
+            if (currentMode === 'or') {
+                filterContainer.innerHTML = `
+                    <label class="filter-item">
+                        <input type="checkbox" checked data-filter="or">
+                        <span class="filter-label">
+                            <span class="filter-color" style="background: rgba(0, 150, 255, 0.7);"></span>
+                            Open Raise
+                        </span>
+                        <span class="filter-count" id="count-or">0</span>
+                    </label>
+                    <label class="filter-item">
+                        <input type="checkbox" checked data-filter="call3bet">
+                        <span class="filter-label">
+                            <span class="filter-color" style="background: rgba(0, 80, 180, 0.9);"></span>
+                            Call 3Bet
+                        </span>
+                        <span class="filter-count" id="count-call3bet">0</span>
+                    </label>
+                    <label class="filter-item">
+                        <input type="checkbox" checked data-filter="bet4">
+                        <span class="filter-label">
+                            <span class="filter-color" style="background: rgba(255, 180, 0, 0.9);"></span>
+                            4Bet Value
+                        </span>
+                        <span class="filter-count" id="count-bet4">0</span>
+                    </label>
+                    <label class="filter-item">
+                        <input type="checkbox" checked data-filter="bet4bluff">
+                        <span class="filter-label">
+                            <span class="filter-color" style="background: rgba(255, 50, 50, 0.9);"></span>
+                            4Bet Bluff
+                        </span>
+                        <span class="filter-count" id="count-bet4bluff">0</span>
+                    </label>
+                    <label class="filter-item">
+                        <input type="checkbox" checked data-filter="fold">
+                        <span class="filter-label">
+                            <span class="filter-color" style="background: rgba(240, 230, 200, 0.3);"></span>
+                            Fold
+                        </span>
+                        <span class="filter-count" id="count-fold">0</span>
+                    </label>
+                `;
+                
+                legendContainer.innerHTML = `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(0, 150, 255, 0.7);"></div>
+                        <div class="legend-text"><strong>OR</strong><br>Open Raise</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(0, 80, 180, 0.9);"></div>
+                        <div class="legend-text"><strong>Call 3Bet</strong><br>Continuar vs 3-bet</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(255, 180, 0, 0.9);"></div>
+                        <div class="legend-text"><strong>4Bet</strong><br>Resubir (value)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(255, 50, 50, 0.9);"></div>
+                        <div class="legend-text"><strong>4Bet Bluff</strong><br>Resubir (bluff)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(240, 230, 200, 0.3);"></div>
+                        <div class="legend-text"><strong>Fold</strong><br>No jugar</div>
+                    </div>
+                `;
+                
+                activeFilters = { or: true, call3bet: true, bet4: true, bet4bluff: true, fold: true };
+            } else {
+                filterContainer.innerHTML = `
+                    <label class="filter-item">
+                        <input type="checkbox" checked data-filter="threebet">
+                        <span class="filter-label">
+                            <span class="filter-color" style="background: rgba(255, 50, 50, 0.9);"></span>
+                            3Bet
+                        </span>
+                        <span class="filter-count" id="count-threebet">0</span>
+                    </label>
+                    <label class="filter-item">
+                        <input type="checkbox" checked data-filter="coldcall">
+                        <span class="filter-label">
+                            <span class="filter-color" style="background: rgba(0, 120, 220, 0.9);"></span>
+                            Cold Call
+                        </span>
+                        <span class="filter-count" id="count-coldcall">0</span>
+                    </label>
+                    <label class="filter-item">
+                        <input type="checkbox" checked data-filter="fold">
+                        <span class="filter-label">
+                            <span class="filter-color" style="background: rgba(240, 230, 200, 0.3);"></span>
+                            Fold
+                        </span>
+                        <span class="filter-count" id="count-fold">0</span>
+                    </label>
+                `;
+                
+                legendContainer.innerHTML = `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(255, 50, 50, 0.9);"></div>
+                        <div class="legend-text"><strong>3Bet</strong><br>Resubir (3-bet)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(0, 120, 220, 0.9);"></div>
+                        <div class="legend-text"><strong>Cold Call</strong><br>Igualar (call)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: rgba(240, 230, 200, 0.3);"></div>
+                        <div class="legend-text"><strong>Fold</strong><br>No jugar</div>
+                    </div>
+                `;
+                
+                activeFilters = { threebet: true, coldcall: true, fold: true };
+            }
+            
+            // Re-attach event listeners
+            document.querySelectorAll('.filter-item input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', (e) => {
+                    const filterType = e.target.dataset.filter;
+                    activeFilters[filterType] = e.target.checked;
+                    
+                    const cells = document.querySelectorAll('.cell');
+                    cells.forEach(cell => {
+                        if (cell.dataset.action === filterType) {
+                            if (e.target.checked) {
+                                cell.classList.remove('hidden');
+                            } else {
+                                cell.classList.add('hidden');
+                            }
+                        }
+                    });
+                });
+            });
+        }
 
         function generateMatrix() {
             const matrix = document.getElementById('matrix');
             matrix.innerHTML = '';
             
-            const range = ranges[currentPosition];
-            const counts = {
-                or: 0,
-                call3bet: 0,
-                bet4: 0,
-                bet4bluff: 0,
-                fold: 0
-            };
+            let range;
+            if (currentMode === 'or') {
+                range = orRanges[currentPosition];
+            } else {
+                range = threeBetRanges[currentThreeBetScenario];
+            }
+            
+            const counts = {};
+            if (currentMode === 'or') {
+                counts.or = 0;
+                counts.call3bet = 0;
+                counts.bet4 = 0;
+                counts.bet4bluff = 0;
+                counts.fold = 0;
+            } else {
+                counts.threebet = 0;
+                counts.coldcall = 0;
+                counts.fold = 0;
+            }
 
             for (let i = 0; i < 13; i++) {
                 for (let j = 0; j < 13; j++) {
@@ -749,20 +979,33 @@
                     cell.dataset.hand = hand;
 
                     let actionType = 'fold';
-                    if (range.bet4bluff.includes(hand)) {
-                        actionType = 'bet4bluff';
-                        counts.bet4bluff++;
-                    } else if (range.bet4.includes(hand)) {
-                        actionType = 'bet4';
-                        counts.bet4++;
-                    } else if (range.call3bet.includes(hand)) {
-                        actionType = 'call3bet';
-                        counts.call3bet++;
-                    } else if (range.or.includes(hand)) {
-                        actionType = 'or';
-                        counts.or++;
+                    
+                    if (currentMode === 'or') {
+                        if (range.bet4bluff.includes(hand)) {
+                            actionType = 'bet4bluff';
+                            counts.bet4bluff++;
+                        } else if (range.bet4.includes(hand)) {
+                            actionType = 'bet4';
+                            counts.bet4++;
+                        } else if (range.call3bet.includes(hand)) {
+                            actionType = 'call3bet';
+                            counts.call3bet++;
+                        } else if (range.or.includes(hand)) {
+                            actionType = 'or';
+                            counts.or++;
+                        } else {
+                            counts.fold++;
+                        }
                     } else {
-                        counts.fold++;
+                        if (range.threebet.includes(hand)) {
+                            actionType = 'threebet';
+                            counts.threebet++;
+                        } else if (range.coldcall.includes(hand)) {
+                            actionType = 'coldcall';
+                            counts.coldcall++;
+                        } else {
+                            counts.fold++;
+                        }
                     }
 
                     cell.classList.add(actionType);
@@ -782,53 +1025,88 @@
         }
 
         function updateCounts(counts) {
-            document.getElementById('count-or').textContent = counts.or;
-            document.getElementById('count-call3bet').textContent = counts.call3bet;
-            document.getElementById('count-bet4').textContent = counts.bet4;
-            document.getElementById('count-bet4bluff').textContent = counts.bet4bluff;
-            document.getElementById('count-fold').textContent = counts.fold;
+            if (currentMode === 'or') {
+                document.getElementById('count-or').textContent = counts.or;
+                document.getElementById('count-call3bet').textContent = counts.call3bet;
+                document.getElementById('count-bet4').textContent = counts.bet4;
+                document.getElementById('count-bet4bluff').textContent = counts.bet4bluff;
+                document.getElementById('count-fold').textContent = counts.fold;
+            } else {
+                document.getElementById('count-threebet').textContent = counts.threebet;
+                document.getElementById('count-coldcall').textContent = counts.coldcall;
+                document.getElementById('count-fold').textContent = counts.fold;
+            }
         }
 
         function updateStats(counts) {
             const total = 169;
-            const playable = counts.or + counts.call3bet + counts.bet4 + counts.bet4bluff;
-            const playablePercent = ((playable / total) * 100).toFixed(1);
+            let playable, aggressive, playablePercent, aggressivePercent;
             
-            const bet4Total = counts.bet4 + counts.bet4bluff;
-            const bet4Percent = ((bet4Total / total) * 100).toFixed(1);
+            if (currentMode === 'or') {
+                playable = counts.or + counts.call3bet + counts.bet4 + counts.bet4bluff;
+                aggressive = counts.bet4 + counts.bet4bluff;
+            } else {
+                playable = counts.threebet + counts.coldcall;
+                aggressive = counts.threebet;
+            }
+            
+            playablePercent = ((playable / total) * 100).toFixed(1);
+            aggressivePercent = ((aggressive / total) * 100).toFixed(1);
 
             document.getElementById('stat-playable').textContent = `${playablePercent}%`;
             document.getElementById('bar-playable').style.width = `${playablePercent}%`;
             
-            document.getElementById('stat-4bet').textContent = `${bet4Percent}%`;
-            document.getElementById('bar-4bet').style.width = `${bet4Percent}%`;
+            document.getElementById('stat-aggressive').textContent = `${aggressivePercent}%`;
+            document.getElementById('bar-aggressive').style.width = `${aggressivePercent}%`;
         }
 
         function showHandInfo(hand) {
-            const range = ranges[currentPosition];
+            let range;
+            if (currentMode === 'or') {
+                range = orRanges[currentPosition];
+            } else {
+                range = threeBetRanges[currentThreeBetScenario];
+            }
+            
             const handInfo = document.getElementById('handInfo');
             let action, actionClass, description;
 
-            if (range.bet4bluff.includes(hand)) {
-                action = '4Bet Bluff';
-                actionClass = 'bet4bluff';
-                description = 'Resubida como bluff';
-            } else if (range.bet4.includes(hand)) {
-                action = '4Bet Value';
-                actionClass = 'bet4';
-                description = 'Resubida por valor';
-            } else if (range.call3bet.includes(hand)) {
-                action = 'Call 3Bet';
-                actionClass = 'call3bet';
-                description = 'Pagamos 3-bet';
-            } else if (range.or.includes(hand)) {
-                action = 'Open Raise';
-                actionClass = 'or';
-                description = 'Abrimos con raise';
+            if (currentMode === 'or') {
+                if (range.bet4bluff.includes(hand)) {
+                    action = '4Bet Bluff';
+                    actionClass = 'bet4bluff';
+                    description = 'Resubida como bluff';
+                } else if (range.bet4.includes(hand)) {
+                    action = '4Bet Value';
+                    actionClass = 'bet4';
+                    description = 'Resubida por valor';
+                } else if (range.call3bet.includes(hand)) {
+                    action = 'Call 3Bet';
+                    actionClass = 'call3bet';
+                    description = 'Pagamos 3-bet';
+                } else if (range.or.includes(hand)) {
+                    action = 'Open Raise';
+                    actionClass = 'or';
+                    description = 'Abrimos con raise';
+                } else {
+                    action = 'Fold';
+                    actionClass = 'fold';
+                    description = 'No jugamos';
+                }
             } else {
-                action = 'Fold';
-                actionClass = 'fold';
-                description = 'No jugamos';
+                if (range.threebet.includes(hand)) {
+                    action = '3Bet';
+                    actionClass = 'threebet';
+                    description = 'Resubimos (3-bet)';
+                } else if (range.coldcall.includes(hand)) {
+                    action = 'Cold Call';
+                    actionClass = 'coldcall';
+                    description = 'Igualamos (call)';
+                } else {
+                    action = 'Fold';
+                    actionClass = 'fold';
+                    description = 'No jugamos';
+                }
             }
 
             handInfo.innerHTML = `
@@ -846,45 +1124,12 @@
                 'bet4': 'rgba(255, 180, 0, 0.9)',
                 'call3bet': 'rgba(0, 80, 180, 0.9)',
                 'or': 'rgba(0, 150, 255, 0.7)',
-                'fold': 'rgba(240, 230, 200, 0.3)'
+                'fold': 'rgba(240, 230, 200, 0.3)',
+                'threebet': 'rgba(255, 50, 50, 0.9)',
+                'coldcall': 'rgba(0, 120, 220, 0.9)'
             };
             return colors[actionClass];
         }
-
-        function changePosition(position) {
-            currentPosition = position;
-            document.getElementById('positionTitle').textContent = position;
-            
-            document.querySelectorAll('.position-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.querySelector(`.position-btn.${position.toLowerCase()}`).classList.add('active');
-            
-            generateMatrix();
-            
-            document.getElementById('handInfo').innerHTML = `
-                <div class="hand-name">${position}</div>
-                <p>Click en una mano</p>
-            `;
-        }
-
-        document.querySelectorAll('.filter-item input[type="checkbox"]').forEach(checkbox => {
-            checkbox.addEventListener('change', (e) => {
-                const filterType = e.target.dataset.filter;
-                activeFilters[filterType] = e.target.checked;
-                
-                const cells = document.querySelectorAll('.cell');
-                cells.forEach(cell => {
-                    if (cell.dataset.action === filterType) {
-                        if (e.target.checked) {
-                            cell.classList.remove('hidden');
-                        } else {
-                            cell.classList.add('hidden');
-                        }
-                    }
-                });
-            });
-        });
 
         document.querySelector('.search-box').addEventListener('input', (e) => {
             const searchTerm = e.target.value.toUpperCase().trim();
@@ -911,6 +1156,8 @@
             }
         });
 
+        // Initialize
+        updateFiltersAndLegend();
         generateMatrix();
     </script>
 </body>
